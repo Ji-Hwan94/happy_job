@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.community.dao.NoticeDao">
+
+	<!-- 공지사항 목록조회 -->
+	<select id="noticelist" resultType="kr.happyjob.study.community.model.NoticeModel">
+		select
+		tn.notice_no
+		, tn.notice_count
+		, tn.notice_title
+		, tn.reg_date
+		, ui.name as writer
+		, tn.is_delete
+		from
+		tb_notice tn
+		join tb_userinfo ui
+		on tn.loginID =
+		ui.loginID
+
+		where
+			tn.is_delete = 2
+			<if test="(srctitle != null) and ( !''.equals(srctitle) )">
+				and tn.notice_title Like CONCAT('%', #{srctitle}, '%')
+			</if>
+			<if test="(srcsdate != null) and ( !''.equals(srcsdate) )">
+				and tn.reg_date <![CDATA[>=]]>
+				#{srcsdate}
+			</if>
+			<if test="(srcedate != null) and ( !''.equals(srcedate) )">
+				and tn.reg_date <![CDATA[<=]]>
+				#{srcedate}
+			</if>
+		order by
+		tn.notice_no desc
+		limit #{pageindex}, #{pageSize}
+	</select>
+
+	<select id="countnoticelist" resultType="int">
+		select
+			count(1) as tot_cnt
+		from
+		tb_notice tn
+
+		where
+			tn.is_delete = 2
+			<if test="(srctitle != null) and ( !''.equals(srctitle) )">
+				and tn.notice_title Like CONCAT('%', #{srctitle}, '%')
+			</if>
+			<if test="(srcsdate != null) and ( !''.equals(srcsdate) )">
+				and tn.reg_date <![CDATA[>=]]>
+				#{srcsdate}
+			</if>
+			<if test="(srcedate != null) and ( !''.equals(srcedate) )">
+				and tn.reg_date <![CDATA[<=]]>
+				#{srcedate}
+			</if>
+	
+	</select>
+
+	<!-- 상세조회 -->
+	<select id="noticedetail" resultType="kr.happyjob.study.community.model.NoticeModel">
+		select 
+			  tn.notice_title
+			, tn.reg_date
+			, ui.name as writer
+			, tn.notice_content
+			, tn.notice_no
+			, tn.file_cd
+			, tf.file_name
+			, tf.file_size
+			, tf.file_nadd
+			, tf.file_madd
+		from tb_notice tn 
+		join tb_userinfo ui 
+			on tn.loginID = ui.loginID
+		left join tb_file tf
+			on tn.file_cd = tf.file_cd
+		where tn.notice_no = #{noticeno}
+	</select>
+
+	<!-- 공지사항 등록 -->
+	<insert id="noticenewsave">
+		<selectKey resultType="int" keyProperty="noticeno" order="BEFORE">
+			select ifnull(max(notice_no), 0) + 1 from tb_notice
+		</selectKey>
+		insert into tb_notice
+		(
+		notice_no
+		, loginID
+		, is_delete
+		, reg_date
+		,
+		notice_content
+		, notice_title
+		, notice_count
+		) values (
+		#{noticeno}
+		,
+		#{loginId}
+		, 2
+		, #{notice_datefile}
+		, #{notice_detfile}
+		,
+		#{notice_titlefile}
+		, 0
+		)
+	</insert>
+	
+	<!-- 공지사항 수정 -->
+	<update id="noticeupdate">
+		update tb_notice
+			set 
+				  notice_title = #{notice_titlefile}
+				, notice_content = #{notice_detfile}
+				, update_date = date_format(Now(), '%Y-%m-%d')
+				, file_cd = #{filecd}
+		where notice_no = #{noticeno}
+	</update>
+	
+	<!-- 공지사항 삭제 -->
+	<update id="noticedelete">
+		update tb_notice
+			set 
+				  is_delete = 1
+		where notice_no = #{noticeno}
+	</update>
+
+	<!-- 조회수 -->
+	<update id="pluswatch">
+		update tb_notice
+			set 
+				  notice_count = notice_count + 1
+		where notice_no = #{notice_no}
+	</update>
+
+	<!-- 파일 코드 생성 -->
+	<select id="filecdcheck" resultType="int">
+		select
+			ifnull(max(file_cd),0) + 1
+		FROM tb_file
+	</select>
+	
+	<!-- 파일 저장 -->
+	<insert id="filenewsave">
+		insert into tb_file
+		(
+		file_cd
+		,file_type
+		,file_size
+		,file_name
+		,file_nadd
+		,file_madd
+		) values (
+		#{filecd}
+		,#{file_type}
+		,#{file_size}
+		,#{file_name}
+		,#{file_nadd}
+		,#{file_madd}
+		)
+	</insert>
+	
+	<update id="fileupdate">
+		update tb_file
+			set
+		 		file_type = #{file_type}
+		,		file_size = #{file_size}
+		,		file_name = #{file_name}
+		,		file_nadd = #{file_nadd}
+		,		file_madd = #{file_madd}
+		where	file_cd = #{filecd}
+	</update>
+
+	<!-- 공지사항 등록 -->
+	<insert id="noticefilenewsave">
+		<selectKey resultType="int" keyProperty="noticeno" order="BEFORE">
+			select ifnull(max(notice_no), 0) + 1 from tb_notice
+		</selectKey>
+		insert into tb_notice
+		(
+		notice_no
+		, loginID
+		, is_delete
+		, reg_date
+		,
+		notice_content
+		, notice_title
+		, notice_count
+		, file_cd
+		) values (
+		#{noticeno}
+		,
+		#{loginId}
+		, 2
+		, #{notice_datefile}
+		, #{notice_detfile}
+		,
+		#{notice_titlefile}
+		, 0
+		, #{filecd}
+		)
+	</insert>
+	
+	
+</mapper>
