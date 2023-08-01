@@ -27,7 +27,7 @@ public class NoticeController {
 
 	@Autowired
 	NoticeService noticeService;
-
+  
 	// Set logger
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
